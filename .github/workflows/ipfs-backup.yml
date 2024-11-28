@@ -68,13 +68,17 @@ jobs:
           rm -rf $TEMP_DIR
           
           # Complete upload and get CID
-          RESULT=$(curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"uploadId\":\"${{ env.UPLOAD_ID }}\"}" \
-            "$API_URL/api/storage/upload/complete")
+          RESULT=$(curl -X POST             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"             -H "Content-Type: application/json"             -H "X-GitHub-Repository: ${{ github.repository }}"             -H "X-GitHub-Commit-Hash: $COMMIT_HASH"             -d "{"uploadId":"${{ env.UPLOAD_ID }}"}"             "$API_URL/api/storage/upload/complete")
           
-          CID=$(echo $RESULT | jq -r .cid)
+          echo "Result: $RESULT"
+          CID=$(echo $RESULT | jq -r '.cid')
+          
+          if [ -z "$CID" ] || [ "$CID" = "null" ]; then
+            echo "Error: Failed to get CID from response"
+            exit 1
+          fi
+          
+          echo "CID: $CID"
           echo "cid=$CID" >> $GITHUB_OUTPUT
 
       - name: Update .gitvault and README
