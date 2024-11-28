@@ -21,8 +21,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get commit hash
+        id: commit
+        run: echo "hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
       - name: Upload to IPFS
         id: upload
+        env:
+          COMMIT_HASH: ${{ steps.commit.outputs.hash }}
         run: |
           # Set API URL
           API_URL="${{ vars.NEXT_PUBLIC_API_URL || 'https://1c63-31-205-124-16.ngrok-free.app' }}"
@@ -51,6 +57,7 @@ jobs:
               -H "X-Upload-Id: ${{ env.UPLOAD_ID }}" \
               -H "X-Chunk-Number: $CHUNK_NUM" \
               -H "X-Total-Chunks: $TOTAL_CHUNKS" \
+              -H "X-GitHub-Commit-Hash: $COMMIT_HASH" \
               -F "chunk=@$chunk" \
               "$API_URL/api/storage/upload/chunk")
             echo "Response: $RESPONSE"
