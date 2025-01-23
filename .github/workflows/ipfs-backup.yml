@@ -57,6 +57,7 @@ jobs:
           # Upload each chunk with retries
           CHUNK_NUM=1
           MAX_RETRIES=3
+          UPLOAD_SUCCESS=false
           
           for chunk in chunk-*; do
             success=false
@@ -99,14 +100,16 @@ jobs:
             
             if [ $success = false ]; then
               echo "Failed to upload chunk $CHUNK_NUM after $MAX_RETRIES attempts"
+              rm -rf $TEMP_DIR
               exit 1
             fi
             
             CHUNK_NUM=$((CHUNK_NUM+1))
           done
           
-          # Cleanup temporary directory
-          rm -rf $TEMP_DIR
+          # All chunks uploaded successfully
+          UPLOAD_SUCCESS=true
+          echo "All chunks uploaded successfully"
           
           # Complete upload with retries
           success=false
@@ -144,9 +147,12 @@ jobs:
               if [ -n "$CID" ]; then
                 echo "CID: $CID"
                 echo "cid=$CID" >> $GITHUB_OUTPUT
+                # Only cleanup after successful completion
+                rm -rf $TEMP_DIR
               else
                 echo "Error: CID not found in response"
                 echo "Full response: $COMPLETE_RESPONSE"
+                rm -rf $TEMP_DIR
                 exit 1
               fi
             else
@@ -159,6 +165,7 @@ jobs:
           
           if [ $success = false ]; then
             echo "Failed to complete upload after $MAX_RETRIES attempts"
+            rm -rf $TEMP_DIR
             exit 1
           fi
 
